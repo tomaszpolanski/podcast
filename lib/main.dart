@@ -15,8 +15,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
-
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
@@ -39,8 +37,23 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  Rss _parseRss(String body) {
+  List<Rss> _rss;
+  StreamSubscription<List<Rss>> subscription;
 
+  @override
+  void initState() {
+    super.initState();
+    subscription = _fetchRss().listen(_setList);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    subscription.cancel();
+  }
+
+
+  Rss _parseRss(String body) {
     debugPrint("Many times?");
     var document = xml.parse(body);
     var title = document
@@ -75,6 +88,12 @@ class _MyHomePageState extends State<MyHomePage> {
             .value);
   }
 
+  void _setList(List<Rss> list) {
+    setState(() {
+      _rss = list;
+    });
+  }
+
   Stream<List<Rss>> _fetchRss() {
     http.Client httpClient = createHttpClient();
     var fetch = (http.Client client, String url) =>
@@ -97,6 +116,27 @@ class _MyHomePageState extends State<MyHomePage> {
         .asStream();
   }
 
+  List<Container> _buildGridTileList() {
+    return _rss.map((item) =>
+    new Container(
+      padding: new EdgeInsets.only(top: 10.0, right: 10.0),
+      child: new InkWell(
+        onTap: () =>
+            Navigator.of(context).push(new MaterialPageRoute(
+              builder: (_) =>
+              new episodes.EpisodesPage(rss: item),
+            )),
+        child: new Card(
+          child: new FadeInImage.assetNetwork(
+              placeholder: "assets/ic_launcher.png",
+              image: item.imageUrl
+          ),
+        ),
+      ),
+    ))
+    .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
@@ -107,34 +147,13 @@ class _MyHomePageState extends State<MyHomePage> {
         title: new Text(widget.title),
       ),
 
-      body: new StreamBuilder(
-        stream: _fetchRss(),
-        builder: (context, snapshot) {
-          return !snapshot.hasData
-              ? const Center(child: const CircularProgressIndicator())
-              : new GridView.count(
-            primary: false,
-            crossAxisCount: 2,
-            padding: const EdgeInsets.only(left: 10.0),
-            children: snapshot.data.map((rss) =>
-            new Container(
-              padding: new EdgeInsets.only(top: 10.0, right: 10.0),
-              child: new InkWell(
-                onTap: () =>
-                    Navigator.of(context).push(new MaterialPageRoute(
-                      builder: (_) =>
-                      new episodes.EpisodesPage(rss: rss),
-                    )),
-                child: new Card(
-                  child: new FadeInImage.assetNetwork(
-                      placeholder: "assets/ic_launcher.png",
-                      image: rss.imageUrl
-                  ),
-                ),
-              ),
-            )).toList(),
-          );
-        },
+      body: _rss == null
+          ? const Center(child: const CircularProgressIndicator())
+          : new GridView.count(
+        primary: false,
+        crossAxisCount: 2,
+        padding: const EdgeInsets.only(left: 10.0),
+        children: _buildGridTileList(),
       ),
     );
   }
