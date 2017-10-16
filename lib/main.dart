@@ -67,19 +67,28 @@ class _MyHomePageState extends State<MyHomePage> {
         .first
         .text;
 
-    var items = document
-        .findAllElements('item')
-        .map(_parseEpisode)
+    var items = _getEpisodes(document)
         .take(50)
         .toList();
     return new Rss(title: title, imageUrl: image, episodes: items);
   }
 
-  Episode _parseEpisode(xml.XmlElement episode) {
-    return new Episode(title: episode
-        .findElements('title')
-        .first
-        .text,
+  Iterable<Episode> _getEpisodes(xml.XmlParent document) {
+    List<Episode> episodes = new List();
+    final items = document.findAllElements('item');
+    num index = items.length - 1;
+    for (var episode in items) {
+      episodes.add(_parseEpisode(episode, index--));
+    }
+    return episodes;
+  }
+
+  Episode _parseEpisode(xml.XmlElement episode, num index) {
+    return new Episode(index: index,
+        title: episode
+            .findElements('title')
+            .first
+            .text,
         imageUrl: episode
             .findElements('itunes:image')
             .first
