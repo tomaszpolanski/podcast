@@ -6,7 +6,7 @@ import './Episode.dart';
 
 const double _kFlexibleSpaceMaxHeight = 200.0;
 
-// TODO swipe to mark as read
+// TODO swipe to mark all as read
 class EpisodesPage extends StatefulWidget {
   const EpisodesPage({ Rss this.rss, Key key }) : super(key: key);
   final Rss rss;
@@ -24,33 +24,6 @@ class EpisodesPageState extends State<EpisodesPage> {
   EpisodesPageState(String imageUrl, List<Episode> episodes) {
     this.episodes = new List.from(episodes);
     this.imageUrl = imageUrl;
-  }
-
-  List<Widget> _listBuilder(BuildContext context) {
-    return episodes.map((episode) =>
-    new Container(
-      padding: const EdgeInsets.only(left: 10.0),
-      height: 100.0,
-      child: new Card(
-        child: new ListTile(
-          leading: new IconButton(
-            icon: const Icon(Icons.play_arrow), onPressed: () {
-            _scaffoldKey.currentState.showSnackBar(const SnackBar(
-                content: const Text(
-                    'Soon playing podcast will be supported')
-            ));
-          },
-          ),
-          title: new Text(episode.title,
-            style: Theme
-                .of(context)
-                .textTheme
-                .subhead,
-          ),
-        ),
-      ),
-    ))
-        .toList();
   }
 
   Widget buildItem(BuildContext context, Episode item) {

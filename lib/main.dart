@@ -78,12 +78,16 @@ class _MyHomePageState extends State<MyHomePage> {
     final items = document.findAllElements('item');
     num index = items.length - 1;
     for (var episode in items) {
-      episodes.add(_parseEpisode(episode, index--));
+      if (episode.findElements('enclosure').isNotEmpty) {
+        episodes.add(_parseEpisode(episode, index--));
+      }
     }
     return episodes;
   }
 
   Episode _parseEpisode(xml.XmlElement episode, num index) {
+
+
     return new Episode(index: index,
         title: episode
             .findElements('title')
@@ -94,6 +98,12 @@ class _MyHomePageState extends State<MyHomePage> {
             .first
             .attributes
             .first
+            .value,
+        fileUrl: episode
+            .findElements('enclosure')
+            .first
+            .attributes
+            .firstWhere((att) => att.name.local == "url")
             .value);
   }
 
