@@ -1,8 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:collection/collection.dart' show lowerBound;
+import 'dart:async';
 
-import './Rss.dart';
+import 'package:collection/collection.dart' show lowerBound;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import './Episode.dart';
+import './Rss.dart';
 
 const double _kFlexibleSpaceMaxHeight = 200.0;
 
@@ -12,10 +15,13 @@ class EpisodesPage extends StatefulWidget {
   final Rss rss;
 
   @override
-  State<EpisodesPage> createState() => new EpisodesPageState(rss.imageUrl, rss.episodes);
+  State<EpisodesPage> createState() =>
+      new EpisodesPageState(rss.imageUrl, rss.episodes);
 }
 
 class EpisodesPageState extends State<EpisodesPage> {
+  static const MethodChannel methodChannel = const MethodChannel(
+      'podcast.com/download');
   static final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<
       ScaffoldState>();
   List<Episode> episodes;
@@ -24,6 +30,21 @@ class EpisodesPageState extends State<EpisodesPage> {
   EpisodesPageState(String imageUrl, List<Episode> episodes) {
     this.episodes = new List.from(episodes);
     this.imageUrl = imageUrl;
+    _getBatteryLevel();
+  }
+
+  Future<Null> _getBatteryLevel() async {
+    String batteryLevel;
+    try {
+      final String result = await methodChannel.invokeMethod('downloadEpisode');
+      debugPrint("Result is $result");
+      batteryLevel = 'Battery level: $result%.';
+    } on PlatformException {
+      batteryLevel = "Failed to get battery level.";
+    }
+    setState(() {
+
+    });
   }
 
   Widget buildItem(BuildContext context, Episode item) {
@@ -35,12 +56,16 @@ class EpisodesPageState extends State<EpisodesPage> {
           setState(() {
             episodes.remove(item);
           });
-          final String action = (direction == DismissDirection.endToStart) ? 'archived' : 'deleted';
+          final String action = (direction == DismissDirection.endToStart)
+              ? 'archived'
+              : 'deleted';
           _scaffoldKey.currentState.showSnackBar(new SnackBar(
               content: new Text('You\'ve archived ${item.title}'),
               action: new SnackBarAction(
                   label: 'UNDO',
-                  onPressed: () { handleUndo(item); }
+                  onPressed: () {
+                    handleUndo(item);
+                  }
               )
           ));
         },
@@ -48,7 +73,8 @@ class EpisodesPageState extends State<EpisodesPage> {
         secondaryBackground: new Container(
             color: theme.primaryColor,
             child: const ListTile(
-                trailing: const Icon(Icons.archive, color: Colors.white, size: 36.0)
+                trailing: const Icon(
+                    Icons.archive, color: Colors.white, size: 36.0)
             )
         ),
         child: new Container(
@@ -102,8 +128,10 @@ class EpisodesPageState extends State<EpisodesPage> {
               ),
             ),
             new SliverList(
-                delegate: new SliverChildListDelegate(episodes.map((episode) => buildItem(context, episode)).toList()),
-    ),
+              delegate: new SliverChildListDelegate(
+                  episodes.map((episode) => buildItem(context, episode))
+                      .toList()),
+            ),
           ],
         )
     );
