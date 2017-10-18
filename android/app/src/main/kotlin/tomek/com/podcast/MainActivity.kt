@@ -79,12 +79,16 @@ class MainActivity : FlutterActivity() {
             }
         }
         Log.e("QQQ0", mediaPlayer.toString())
-        EventChannel(getFlutterView(), "ANY_CHANNEL").setStreamHandler(
+        EventChannel(flutterView, PLAY_CHANNEL).setStreamHandler(
                 object : EventChannel.StreamHandler {
-                    override fun onListen(arguments: Any, events: EventChannel.EventSink) {
+                    override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                        mediaPlayer.setOnBufferingUpdateListener { mp, percent ->
+                            events.success(percent)
+                        }
                     }
 
-                    override fun onCancel(arguments: Any) {
+                    override fun onCancel(arguments: Any?) {
+                        mediaPlayer.setOnBufferingUpdateListener(null)
                     }
                 }
         )
