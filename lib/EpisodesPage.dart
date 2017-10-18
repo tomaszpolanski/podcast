@@ -22,6 +22,9 @@ class EpisodesPage extends StatefulWidget {
 class EpisodesPageState extends State<EpisodesPage> {
   static const MethodChannel methodChannel = const MethodChannel(
       'podcast.com/download');
+  static const MethodChannel methodStreamChannel = const MethodChannel(
+      'podcast.com/stream');
+  static const EventChannel eventChannel = const EventChannel('podcast.com/play');
   static final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<
       ScaffoldState>();
   List<Episode> episodes;
@@ -30,17 +33,35 @@ class EpisodesPageState extends State<EpisodesPage> {
   EpisodesPageState(String imageUrl, List<Episode> episodes) {
     this.episodes = new List.from(episodes);
     this.imageUrl = imageUrl;
-    _getBatteryLevel();
   }
 
-  Future<Null> _getBatteryLevel() async {
-    String batteryLevel;
+  @override
+  void initState() {
+    super.initState();
+    eventChannel.receiveBroadcastStream().listen(_onEvent, onError: _onError);
+  }
+
+  void _onEvent(num event) {
+    debugPrint(event.toString());
+//    setState(() {
+//      _chargingStatus =
+//      "Battery status: ${event == 'charging' ? '' : 'dis'}charging.";
+//    });
+  }
+
+  void _onError(PlatformException error) {
+
+    debugPrint(error.toString());
+//    setState(() {
+//      _chargingStatus = "Battery status: unknown.";
+//    });
+  }
+
+  Future<Null> _streamEpisode(String url) async {
     try {
-      final String result = await methodChannel.invokeMethod('downloadEpisode');
+      final String result = await methodStreamChannel.invokeMethod('streamEpisode', { "url": url });
       debugPrint("Result is $result");
-      batteryLevel = 'Battery level: $result%.';
     } on PlatformException {
-      batteryLevel = "Failed to get battery level.";
     }
     setState(() {
 
@@ -83,12 +104,8 @@ class EpisodesPageState extends State<EpisodesPage> {
           child: new Card(
             child: new ListTile(
               leading: new IconButton(
-                icon: const Icon(Icons.play_arrow), onPressed: () {
-                _scaffoldKey.currentState.showSnackBar(const SnackBar(
-                    content: const Text(
-                        'Soon playing podcast will be supported')
-                ));
-              },
+                icon: const Icon(Icons.play_arrow),
+                  onPressed: () => _streamEpisode(item.fileUrl),
               ),
               title: new Text(item.title,
                 style: Theme
