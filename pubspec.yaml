@@ -2,10 +2,11 @@ name: podcast
 description: Playing around with Flutter
 
 dependencies:
-  rxdart: "^0.14.0+1"
-  xml: "^2.6.0"
+  rxdart:
+  xml:
   flutter:
     sdk: flutter
+  http: ^0.12.0+1
 
 dev_dependencies:
   flutter_test:

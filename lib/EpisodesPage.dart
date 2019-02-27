@@ -11,7 +11,7 @@ const double _kFlexibleSpaceMaxHeight = 200.0;
 
 // TODO swipe to mark all as read
 class EpisodesPage extends StatefulWidget {
-  const EpisodesPage({ Rss this.rss, Key key }) : super(key: key);
+  const EpisodesPage({Rss this.rss, Key key}) : super(key: key);
   final Rss rss;
 
   @override
@@ -20,13 +20,14 @@ class EpisodesPage extends StatefulWidget {
 }
 
 class EpisodesPageState extends State<EpisodesPage> {
-  static const MethodChannel methodChannel = const MethodChannel(
-      'podcast.com/download');
-  static const MethodChannel methodStreamChannel = const MethodChannel(
-      'podcast.com/stream');
-  static const EventChannel eventChannel = const EventChannel('podcast.com/play');
-  static final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<
-      ScaffoldState>();
+  static const MethodChannel methodChannel =
+      const MethodChannel('podcast.com/download');
+  static const MethodChannel methodStreamChannel =
+      const MethodChannel('podcast.com/stream');
+  static const EventChannel eventChannel =
+      const EventChannel('podcast.com/play');
+  static final GlobalKey<ScaffoldState> _scaffoldKey =
+      new GlobalKey<ScaffoldState>();
   List<Episode> episodes;
   String imageUrl;
 
@@ -38,10 +39,10 @@ class EpisodesPageState extends State<EpisodesPage> {
   @override
   void initState() {
     super.initState();
-    eventChannel.receiveBroadcastStream().listen(_onEvent, onError: _onError);
+    eventChannel.receiveBroadcastStream().listen(_onEvent);
   }
 
-  void _onEvent(num event) {
+  void _onEvent(dynamic event) {
     debugPrint(event.toString());
 //    setState(() {
 //      _chargingStatus =
@@ -50,7 +51,6 @@ class EpisodesPageState extends State<EpisodesPage> {
   }
 
   void _onError(PlatformException error) {
-
     debugPrint(error.toString());
 //    setState(() {
 //      _chargingStatus = "Battery status: unknown.";
@@ -59,13 +59,11 @@ class EpisodesPageState extends State<EpisodesPage> {
 
   Future<Null> _streamEpisode(String url) async {
     try {
-      final String result = await methodStreamChannel.invokeMethod('streamEpisode', { "url": url });
+      final String result =
+          await methodStreamChannel.invokeMethod('streamEpisode', {"url": url});
       debugPrint("Result is $result");
-    } on PlatformException {
-    }
-    setState(() {
-
-    });
+    } on PlatformException {}
+    setState(() {});
   }
 
   Widget buildItem(BuildContext context, Episode item) {
@@ -86,18 +84,14 @@ class EpisodesPageState extends State<EpisodesPage> {
                   label: 'UNDO',
                   onPressed: () {
                     handleUndo(item);
-                  }
-              )
-          ));
+                  })));
         },
         background: new Container(),
         secondaryBackground: new Container(
             color: theme.primaryColor,
             child: const ListTile(
-                trailing: const Icon(
-                    Icons.archive, color: Colors.white, size: 36.0)
-            )
-        ),
+                trailing: const Icon(Icons.archive,
+                    color: Colors.white, size: 36.0))),
         child: new Container(
           padding: const EdgeInsets.only(left: 10.0),
           height: 100.0,
@@ -105,18 +99,15 @@ class EpisodesPageState extends State<EpisodesPage> {
             child: new ListTile(
               leading: new IconButton(
                 icon: const Icon(Icons.play_arrow),
-                  onPressed: () => _streamEpisode(item.fileUrl),
+                onPressed: () => _streamEpisode(item.fileUrl),
               ),
-              title: new Text(item.title,
-                style: Theme
-                    .of(context)
-                    .textTheme
-                    .subhead,
+              title: new Text(
+                item.title,
+                style: Theme.of(context).textTheme.subhead,
               ),
             ),
           ),
-        )
-    );
+        ));
   }
 
   void handleUndo(Episode item) {
@@ -138,19 +129,16 @@ class EpisodesPageState extends State<EpisodesPage> {
               flexibleSpace: new FlexibleSpaceBar(
                   background: new Container(
                       child: new FadeInImage.assetNetwork(
-                        placeholder: "assets/ic_launcher.png",
-                        image: imageUrl,
-                      )
-                  )
-              ),
+                placeholder: "assets/ic_launcher.png",
+                image: imageUrl,
+              ))),
             ),
             new SliverList(
-              delegate: new SliverChildListDelegate(
-                  episodes.map((episode) => buildItem(context, episode))
-                      .toList()),
+              delegate: new SliverChildListDelegate(episodes
+                  .map((episode) => buildItem(context, episode))
+                  .toList()),
             ),
           ],
-        )
-    );
+        ));
   }
 }

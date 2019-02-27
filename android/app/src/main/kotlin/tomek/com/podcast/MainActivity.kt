@@ -41,7 +41,7 @@ class MainActivity : FlutterActivity() {
 
                 val dm = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
 
-                val fileName = call.argument<String>("url")
+                val fileName : String = call.argument("url")!!
                 val id = downloadEpisode(dm, fileName)
                 val receiver = object : BroadcastReceiver() {
                     override fun onReceive(context: Context, intent: Intent) {

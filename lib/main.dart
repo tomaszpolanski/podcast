@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:xml/xml.dart' as xml;
 
@@ -36,14 +35,13 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   List<Rss> _rss;
   StreamSubscription<List<Rss>> subscription;
 
   @override
   void initState() {
     super.initState();
-    subscription = _fetchRss().listen(_setList);
+    subscription = Observable.fromFuture(_fetchRss()).listen(_setList);
   }
 
   @override
@@ -52,24 +50,14 @@ class _MyHomePageState extends State<MyHomePage> {
     subscription.cancel();
   }
 
-
   Rss _parseRss(String body) {
     debugPrint("Many times?");
     var document = xml.parse(body);
-    var title = document
-        .findAllElements('title')
-        .first
-        .text;
-    var image = document
-        .findAllElements('image')
-        .first
-        .findElements("url")
-        .first
-        .text;
+    var title = document.findAllElements('title').first.text;
+    var image =
+        document.findAllElements('image').first.findElements("url").first.text;
 
-    var items = _getEpisodes(document)
-        .take(50)
-        .toList();
+    var items = _getEpisodes(document).take(50).toList();
     return new Rss(title: title, imageUrl: image, episodes: items);
   }
 
@@ -86,19 +74,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Episode _parseEpisode(xml.XmlElement episode, num index) {
-
-
-    return new Episode(index: index,
-        title: episode
-            .findElements('title')
-            .first
-            .text,
-        imageUrl: episode
-            .findElements('itunes:image')
-            .first
-            .attributes
-            .first
-            .value,
+    return new Episode(
+        index: index,
+        title: episode.findElements('title').first.text,
+        imageUrl:
+            episode.findElements('itunes:image').first.attributes.first.value,
         fileUrl: episode
             .findElements('enclosure')
             .first
@@ -113,47 +93,45 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Stream<List<Rss>> _fetchRss() {
-    http.Client httpClient = createHttpClient();
-    var fetch = (http.Client client, String url) =>
-    new Observable.fromFuture(
-        httpClient.get(
-          url,
-          headers: {
-            "Accept": "application/xml"
-          },
-        ));
+  Future<List<Rss>> _fetchRss() async {
+    final rob = await get(
+      "http://robbwolf.libsyn.com/rss",
+      headers: {"Accept": "application/xml"},
+    );
+    final burning = await get(
+      "http://fatburningman.com/feed/podcast/",
+      headers: {"Accept": "application/xml"},
+    );
 
-    return fetch(httpClient, "http://robbwolf.libsyn.com/rss")
-        .mergeWith(
-        [fetch(httpClient, "http://fatburningman.com/feed/podcast/")])
-        .map((rss) => _parseRss(rss.body))
-        .fold(new List(), (list, previous) {
-      list.add(previous);
-      return list;
-    })
-        .asStream();
+    final List<Rss> result = [_parseRss(rob.body), _parseRss(burning.body)];
+    return result;
+
+//    final test = fetch()
+//        //   .mergeWith([fetch("http://fatburningman.com/feed/podcast/")])
+//        .map((rss) => );
+//    return test.fold(new List(), (list, previous) {
+//      list.add(previous);
+//      return list;
+//    }).asStream();
   }
 
   List<Container> _buildGridTileList() {
-    return _rss.map((item) =>
-    new Container(
-      padding: new EdgeInsets.only(top: 10.0, right: 10.0),
-      child: new InkWell(
-        onTap: () =>
-            Navigator.of(context).push(new MaterialPageRoute(
-              builder: (_) =>
-              new episodes.EpisodesPage(rss: item),
-            )),
-        child: new Card(
-          child: new FadeInImage.assetNetwork(
-              placeholder: "assets/ic_launcher.png",
-              image: item.imageUrl
-          ),
-        ),
-      ),
-    ),
-    )
+    return _rss
+        .map(
+          (item) => new Container(
+                padding: new EdgeInsets.only(top: 10.0, right: 10.0),
+                child: new InkWell(
+                  onTap: () => Navigator.of(context).push(new MaterialPageRoute(
+                        builder: (_) => new episodes.EpisodesPage(rss: item),
+                      )),
+                  child: new Card(
+                    child: new FadeInImage.assetNetwork(
+                        placeholder: "assets/ic_launcher.png",
+                        image: item.imageUrl),
+                  ),
+                ),
+              ),
+        )
         .toList();
   }
 
@@ -166,16 +144,14 @@ class _MyHomePageState extends State<MyHomePage> {
         // the App.build method, and use it to set our appbar title.
         title: new Text(widget.title),
       ),
-
       body: _rss == null
           ? const Center(child: const CircularProgressIndicator())
           : new GridView.count(
-        primary: false,
-        crossAxisCount: 2,
-        padding: const EdgeInsets.only(left: 10.0),
-        children: _buildGridTileList(),
-      ),
+              primary: false,
+              crossAxisCount: 2,
+              padding: const EdgeInsets.only(left: 10.0),
+              children: _buildGridTileList(),
+            ),
     );
   }
 }
-
